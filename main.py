@@ -1,3 +1,4 @@
+
 from flask import Flask, request
 import os
 import asyncio
@@ -9,8 +10,8 @@ from telegram.ext import (
 )
 
 # --- Config ---
-BOT_TOKEN = "7971742600:AAFcFIoNeJtSb0vfK8gXAF4ucSx6VXFZP5A"
-WEBHOOK_URL = f"https://flextea.onrender.com/webhook/{BOT_TOKEN}"  # <-- Replace if needed
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 
 app = Flask(__name__)
 bot_app = ApplicationBuilder().token(BOT_TOKEN).build()
@@ -117,8 +118,10 @@ bot_app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_messa
 def home():
     return "✅ FlexTeaBot is running"
 
-@app.route(f"/webhook/{BOT_TOKEN}", methods=["POST"])
-async def webhook():
+@app.route(f"/webhook/<token>", methods=["POST"])
+async def webhook(token):
+    if token != BOT_TOKEN:
+        return {"error": "Unauthorized"}, 403
     update = Update.de_json(request.get_json(force=True), bot_app.bot)
     await bot_app.process_update(update)
     return {"ok": True}
